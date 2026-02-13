@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gophr — Quick Quote</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;700&family=Outfit:wght@700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',sans-serif;background:#fcfcfc;color:#0a0a0a;overflow-x:hidden}
+button{cursor:pointer;font-family:inherit;border:none;background:none}
+input,textarea,select{font-family:inherit;outline:none}
+:root{
+  --pd:#210055;--pb:#6300FF;--pl:#efe5ff;--pw:#7720ff;
+  --g5:#f2f2f2;--g10:#e5e5e5;--g25:#bfbfbf;--g50:#808080;--g75:#404040;
+  --bg:#f3f3f7;--w:#fff;--b:#000;--sb:250px;
+}
+/* LAYOUT */
+.layout{display:flex;min-height:100vh}
+/* SIDEBAR */
+.sidebar{width:var(--sb);min-width:var(--sb);position:fixed;top:0;left:0;bottom:0;z-index:100;background:var(--g5);display:flex;flex-direction:column;overflow-y:auto;transition:transform .3s}
+.sb-logo{background:var(--b);height:56px;display:flex;align-items:center;padding:10px 16px 10px 24px}
+.sb-logo svg{height:24px;width:auto}
+.mi{display:flex;align-items:center;gap:12px;height:48px;padding:0 24px;font-size:14px;letter-spacing:.25px;line-height:20px;color:var(--b);background:var(--g5);text-decoration:none;transition:background .15s}
+.mi:hover{background:var(--g10)}
+.mi.act{background:var(--pd);color:var(--w);font-weight:700}
+.mi .ic{width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mi .ic svg{width:20px;height:20px}
+.mi.act .ic svg{fill:var(--w);stroke:var(--w)}
+.mi .ch{margin-left:auto}
+.mi .ch svg{width:12px;height:12px;transition:transform .2s}
+.mi.exp .ch svg{transform:rotate(180deg)}
+.ms{display:flex;align-items:center;height:48px;padding:0 24px 0 70px;font-size:14px;letter-spacing:.25px;color:var(--b);background:var(--g5);cursor:pointer;transition:background .15s}
+.ms:hover{background:var(--g10)}
+.md{padding:8px 16px 8px 64px;background:var(--g10)}
+.md div{height:1px;background:rgba(0,0,0,.12)}
+.ham{display:none;position:fixed;top:12px;left:12px;z-index:200;width:40px;height:40px;align-items:center;justify-content:center;background:var(--b);border-radius:6px}
+.ham svg{stroke:var(--w);width:22px;height:22px}
+.so{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:99}
+/* MAIN */
+.main{margin-left:var(--sb);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.screen{display:none;flex:1;flex-direction:column;align-items:center;padding:72px 40px 48px}
+.screen.active{display:flex}
+/* TYPOGRAPHY */
+.h1{font-family:'Outfit',sans-serif;font-weight:700;font-size:40px;line-height:52px;letter-spacing:.15px;color:var(--g75)}
+.h2{font-family:'Outfit',sans-serif;font-weight:700;font-size:20px;line-height:24px;letter-spacing:.15px;color:var(--pd)}
+.h3{font-family:'Outfit',sans-serif;font-weight:700;font-size:16px;line-height:24px;letter-spacing:.15px}
+.lbl{font-weight:700;font-size:14px;line-height:21px;color:var(--pd)}
+.cap{font-weight:700;font-size:12px;line-height:16px;letter-spacing:.4px}
+/* CARDS */
+.wcard{background:var(--w);border:1px solid var(--g10);border-radius:8px;padding:32px 32px 40px;width:100%}
+.wcard+.wcard{margin-top:32px}
+/* INPUTS */
+.fi{height:48px;border:1px solid var(--g50);border-radius:4px;padding:12px;font-size:14px;color:#0a0a0a;background:var(--w);width:100%}
+.fi::placeholder{color:rgba(10,10,10,.5)}
+.fi:focus{border-color:var(--pb)}
+.ta{border:1px solid var(--g50);border-radius:4px;padding:12px;font-size:14px;color:#0a0a0a;background:var(--w);width:100%;resize:vertical;min-height:120px}
+.ta::placeholder{color:rgba(10,10,10,.5)}
+.ta:focus{border-color:var(--pb)}
+/* BUTTONS */
+.br{display:flex;gap:16px;width:100%;max-width:752px}
+.bt{flex:1;display:flex;align-items:center;justify-content:center;height:40px;padding:12px 16px;border-radius:4px;font-weight:500;font-size:14px;line-height:16px;letter-spacing:1.25px;text-transform:uppercase;transition:opacity .15s}
+.bt:hover{opacity:.85}
+.bt-o{background:var(--w);color:var(--pb);border:1px solid var(--g10)}
+.bt-p{background:var(--pb);color:var(--w)}
+.bt-d{background:var(--g75);color:var(--w);opacity:.5;pointer-events:none}
+/* PILL TAGS */
+.pill{display:inline-flex;align-items:center;padding:6px 14px;border-radius:8px;font-weight:700;font-size:12px;letter-spacing:.4px;line-height:16px;color:var(--w);width:fit-content}
+.pill-bk{background:var(--b)}
+.pill-pb{background:var(--pb)}
+/* DROPDOWN */
+.dd{position:relative}
+.dd-btn{display:flex;align-items:center;justify-content:space-between;width:100%;height:48px;padding:0 9px 0 13px;border:1px solid #d1d5dc;border-radius:4px;background:var(--w);cursor:pointer;font-size:14px;color:#0a0a0a}
+.dd-btn svg{width:16px;height:10px;flex-shrink:0;transition:transform .2s}
+.dd-btn.open svg{transform:rotate(180deg)}
+.dd-list{position:absolute;top:52px;left:0;right:0;background:var(--w);border:1px solid var(--g10);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.1);z-index:50;display:none;max-height:320px;overflow-y:auto}
+.dd-list.show{display:block}
+.dd-item{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;transition:background .1s;border-bottom:1px solid var(--g10)}
+.dd-item:last-child{border-bottom:none}
+.dd-item:hover{background:var(--g5)}
+.dd-item.sel{background:var(--pl)}
+.dd-item .ic{width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dd-item .ic svg{width:28px;height:28px;fill:#888}
+.dd-item .tx .nm{font-weight:700;font-size:14px;color:var(--b)}
+.dd-item .tx .dt{font-size:13px;color:var(--g50)}
+/* SEARCH + ADDRESS */
+.addr-search{display:flex;flex-direction:column;gap:16px}
+.addr-input{display:flex;align-items:center;gap:4px;height:50px;padding:0 16px;border:1px solid #d1d5dc;border-radius:4px;background:var(--w)}
+.addr-input svg{width:18px;height:18px;flex-shrink:0;stroke:#99a1af}
+.addr-input input{border:none;flex:1;font-family:'Inter',sans-serif;font-size:16px;color:#0a0a0a;background:transparent}
+.addr-input input::placeholder{color:#99a1af}
+.fav-btn{font-weight:500;font-size:14px;letter-spacing:1.25px;text-transform:uppercase;color:var(--pb);padding:14px 24px;background:var(--w);border:1px solid var(--g10);border-radius:4px;display:inline-flex;align-items:center;justify-content:center;transition:opacity .15s}
+.fav-btn:hover{opacity:.7}
+.fav-list{background:var(--w);border:1px solid var(--g10);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.08);display:none;max-height:300px;overflow-y:auto}
+.fav-list.show{display:block}
+.fav-item{padding:14px 16px;cursor:pointer;border-bottom:1px solid var(--g10);transition:background .1s}
+.fav-item:hover{background:var(--g5)}
+.fav-item:last-child{border-bottom:none}
+.fav-item .fn{font-weight:700;font-size:14px;color:var(--b)}
+.fav-item .fa{font-size:13px;color:var(--g50);margin-top:2px}
+/* FILLED ADDRESS */
+.addr-filled{display:flex;gap:16px;align-items:flex-start}
+.addr-pin{display:flex;flex-direction:column;align-items:center;gap:2px;padding-top:4px}
+.addr-pin .dot{width:22px;height:28px}
+.addr-dots{display:flex;flex-direction:column;gap:3px;align-items:center}
+.addr-dots span{width:3px;height:3px;border-radius:50%;background:var(--g25)}
+.addr-info{flex:1;display:flex;flex-direction:column;gap:4px}
+.addr-name{font-size:14px;line-height:20px;letter-spacing:.25px}
+.addr-name b{font-weight:700}
+.addr-addr{font-size:14px;line-height:20px;letter-spacing:.25px;color:var(--b)}
+.addr-rm{font-weight:500;font-size:14px;color:var(--pb);letter-spacing:1.25px;cursor:pointer;flex-shrink:0;align-self:center}
+.addr-rm:hover{opacity:.7}
+/* SERVICE CARDS */
+.svc-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.svc-card{border:2px solid var(--g10);border-radius:12px;padding:20px 24px;cursor:pointer;background:var(--w);transition:border-color .15s,background .15s;text-align:left}
+.svc-card:hover{border-color:var(--g25)}
+.svc-card.sel{border-color:var(--pb);background:var(--pl)}
+.svc-card .svc-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.svc-card .svc-nm{font-family:'Outfit',sans-serif;font-weight:700;font-size:20px;color:var(--pd)}
+.svc-card .svc-pr{font-family:'Outfit',sans-serif;font-weight:700;font-size:20px;color:var(--pd)}
+.svc-card .svc-lb{font-size:14px;color:var(--g75);margin-bottom:2px}
+.svc-card .svc-tm{font-weight:700;font-size:14px;color:var(--pb)}
+.svc-card.custom-card{grid-column:1}
+.svc-card.custom-card .svc-top{margin-bottom:0}
+.svc-card.custom-card .svc-desc{font-weight:700;font-size:14px;color:var(--g75)}
+/* QUOTE PANEL */
+.qp{background:var(--w);border:1px solid var(--g10);border-radius:8px;padding:25px;display:flex;flex-direction:column;gap:16px;position:sticky;top:72px;width:371px;min-width:371px;flex-shrink:0}
+.qp-title{font-weight:700;font-size:18px;line-height:24px;color:var(--pd)}
+.qp-row{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:1px solid var(--g10)}
+.qp-row .qp-l{font-size:14px;line-height:20px;letter-spacing:.25px;color:var(--pd)}
+.qp-row .qp-r{text-align:right;font-size:14px;line-height:20px;letter-spacing:.25px;color:var(--pd)}
+.qp-row .qp-r b{font-weight:700;display:block}
+.qp-row .qp-r .sub{font-size:13px;color:var(--pb)}
+.qp-addr{display:flex;flex-direction:column;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--g10)}
+.qp-addr-item{display:flex;flex-direction:column;gap:4px}
+.qp-addr-item .qp-dot{display:flex;align-items:center;gap:4px}
+.qp-addr-item .qp-dot .qp-circle{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0}
+.qp-addr-item .qp-dot .cap{font-weight:700;font-size:12px;letter-spacing:.4px;color:var(--pd)}
+.qp-addr-item .qp-val{padding-left:14px;font-size:14px;line-height:20px;letter-spacing:.25px;color:var(--pd);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qp-price{display:flex;flex-direction:column;gap:12px}
+.qp-price-row{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;color:var(--pd)}
+.qp-price-row .val{font-weight:700;font-size:16px}
+.qp-price-row.big .val{font-family:'Outfit',sans-serif;font-weight:700;font-size:24px;color:var(--pw)}
+/* STEP2 */
+.del-bar{display:flex;gap:16px;align-items:flex-start;width:100%}
+.del-pin{display:flex;flex-direction:column;align-items:center;gap:2px;padding-top:2px}
+.del-pin .dot{width:24px;height:32px}
+.del-content{display:flex;flex-direction:column;gap:8px}
+.gcard{background:var(--bg);border:1px solid var(--g10);border-radius:8px;padding:24px;width:100%}
+.fg{display:flex;flex-direction:column;gap:8px}
+.fg-row{display:flex;gap:24px}
+.fg-row>*{flex:1}
+.cb-row{display:flex;align-items:center;gap:8px;font-size:14px;letter-spacing:.25px;color:var(--b)}
+.cb{width:20px;height:20px;border:2px solid var(--b);border-radius:2px;background:var(--w);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cb.checked{background:var(--pb);border-color:var(--pb)}
+.cb.checked::after{content:'';display:block;width:6px;height:10px;border:solid var(--w);border-width:0 2px 2px 0;transform:rotate(45deg);margin-top:-2px}
+.add-btn{display:inline-flex;align-items:center;gap:8px;padding:12px 16px;border:1px solid var(--g10);border-radius:4px;font-weight:500;font-size:14px;letter-spacing:1.25px;text-transform:uppercase;color:var(--pb);background:var(--w)}
+/* STEP3 */
+.map-ph{width:100%;height:200px;background:linear-gradient(135deg,#e8e8e8 0%,#d0d0d0 50%,#e0e0e0 100%);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--g50);font-size:14px;position:relative;overflow:hidden}
+.map-ph::before{content:'';position:absolute;top:35%;left:30%;width:40%;height:2px;background:var(--pd);opacity:.4}
+.map-ph .mp{position:absolute;width:20px;height:26px}
+.info-bar{display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid var(--g10);border-radius:8px;padding:16px 20px;width:100%}
+.info-bar .ib-l{display:flex;flex-direction:column;gap:4px}
+.info-bar .ib-t{font-family:'Outfit',sans-serif;font-weight:700;font-size:16px;color:var(--pd)}
+.info-bar .ib-t span{font-weight:400;font-family:'IBM Plex Sans',sans-serif;font-size:14px;color:var(--g75)}
+.info-bar .ib-d{font-size:14px;color:var(--g75)}
+.info-bar .ib-d b{font-weight:700}
+.edit-btn{display:inline-flex;align-items:center;gap:6px;font-weight:500;font-size:14px;letter-spacing:1.25px;text-transform:uppercase;color:var(--pb)}
+.sec-hd{display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:16px}
+.parcel-bar{display:flex;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid var(--g10);border-radius:8px;padding:16px 20px;width:100%}
+.parcel-bar .pb-t{font-size:14px;color:var(--b)}
+.parcel-bar .pb-t b{font-weight:700}
+.price-bar{display:flex;align-items:center;justify-content:flex-end;gap:24px;background:var(--pl);border-radius:8px;padding:20px 24px;width:100%}
+.price-bar .pbl{font-size:12px;color:var(--g50)}
+.price-bar .pbv{font-size:14px;color:var(--g75)}
+.price-bar .pbvb{font-family:'Outfit',sans-serif;font-weight:700;font-size:20px;color:var(--pb)}
+/* STEP4 */
+.conf-hd{display:flex;justify-content:space-between;align-items:center;width:100%}
+.track-link{display:inline-flex;align-items:center;gap:6px;font-weight:500;font-size:14px;letter-spacing:1.25px;text-transform:uppercase;color:var(--pb)}
+.dl-section{display:flex;gap:24px;width:100%;margin-top:16px}
+.dl-card{flex:1;background:var(--bg);border:1px solid var(--g10);border-radius:8px;padding:24px}
+.dl-card h3{font-family:'Outfit',sans-serif;font-weight:700;font-size:16px;color:var(--pd);margin-bottom:8px}
+.dl-card p{font-size:14px;color:var(--g75);line-height:20px;margin-bottom:12px}
+.dl-card .dl-btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 24px;border:1px solid var(--g10);border-radius:4px;font-weight:500;font-size:14px;letter-spacing:1.25px;text-transform:uppercase;color:var(--pb);background:var(--w);width:100%}
+.num-step{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.num-step .num{width:24px;height:24px;border-radius:50%;background:var(--pb);color:var(--w);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0}
+.num-step .ntx{font-size:14px;color:var(--g75)}
+/* TWO COL LAYOUT */
+.two-col{display:flex;gap:32px;align-items:flex-start;width:100%;max-width:1200px}
+.two-col .col-l{flex:1;min-width:0}
+.one-col{width:100%;max-width:752px;display:flex;flex-direction:column;gap:32px;align-items:center}
+/* RESPONSIVE */
+@media(max-width:1280px){.qp{width:320px;min-width:320px}}
+@media(max-width:1100px){.qp{display:none}.two-col .col-l{max-width:792px}}
+@media(max-width:1024px){
+  .sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.so.open{display:block}
+  .ham{display:flex}.main{margin-left:0}
+}
+@media(max-width:768px){
+  .screen{padding:24px 16px 40px}
+  .h1{font-size:28px;line-height:36px}
+  .svc-grid{grid-template-columns:1fr}
+  .br{flex-direction:column}
+  .fg-row{flex-direction:column;gap:16px}
+  .dl-section{flex-direction:column}
+  .two-col{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+<button class="ham" onclick="document.querySelector('.sidebar').classList.toggle('open');document.querySelector('.so').classList.toggle('open')"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+<div class="so" onclick="document.querySelector('.sidebar').classList.remove('open');this.classList.remove('open')"></div>
+
+<aside class="sidebar">
+<div class="sb-logo"><svg viewBox="0 0 130 30" fill="none"><circle cx="14" cy="15" r="12" stroke="#fff" stroke-width="2.5" fill="none"/><path d="M14 7C20 7 22 11 22 15C22 19 20 23 14 23" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round"/><line x1="14" y1="15" x2="22" y2="15" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/><text x="34" y="21" fill="#fff" font-family="Outfit,sans-serif" font-weight="700" font-size="20" letter-spacing="1.5">GOPHR</text></svg></div>
+<a class="mi act" href="#"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></span>Home</a>
+<a class="mi" href="#"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>Today</a>
+<a class="mi" href="#"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><rect x="14" y="14" width="4" height="4" rx="1" fill="currentColor" stroke="none"/></svg></span>Scheduled</a>
+<a class="mi" href="#"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg></span>History</a>
+<a class="mi" href="#"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg></span>Drafts</a>
+<div class="md"><div></div></div>
+<a class="mi exp" href="#" onclick="event.preventDefault();this.classList.toggle('exp');this.nextElementSibling.style.display=this.classList.contains('exp')?'block':'none'"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="15" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span>Billing<span class="ch"><svg viewBox="0 0 12 12" fill="currentColor"><path d="M2 4l4 4 4-4"/></svg></span></a>
+<div><div class="ms">All Payments</div><div class="ms">Payment Methods</div><div class="ms">Invoice Details</div></div>
+<a class="mi exp" href="#" onclick="event.preventDefault();this.classList.toggle('exp');this.nextElementSibling.style.display=this.classList.contains('exp')?'block':'none'"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>Favourites<span class="ch"><svg viewBox="0 0 12 12" fill="currentColor"><path d="M2 4l4 4 4-4"/></svg></span></a>
+<div><div class="ms">Addresses</div></div>
+<a class="mi" href="#"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>My Organisation</a>
+</aside>
+
+<main class="main">
+
+<!-- ========== STEP 1: QUICK QUOTE ========== -->
+<div class="screen active" id="s1">
+<div class="two-col">
+<div class="col-l">
+<!-- DELIVERY DETAILS -->
+<div class="wcard">
+<div class="h2" style="margin-bottom:24px">Delivery Details</div>
+<!-- PICKUP -->
+<div id="pickup-section">
+<div id="pickup-default" class="addr-search">
+<span class="pill pill-bk">Pickup Address</span>
+<div class="addr-input"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Start typing an address"></div>
+<div><button class="fav-btn" onclick="toggleFavs('pickup')">FAVOURITE ADDRESSES</button><div class="fav-list" id="pickup-favs"></div></div>
+</div>
+<div id="pickup-filled" style="display:none" class="addr-filled">
+<div class="addr-pin"><svg class="dot" viewBox="0 0 22 28"><ellipse cx="11" cy="10" rx="9" ry="9" fill="#000" stroke="#000" stroke-width="2"/><polygon points="7,16 11,26 15,16" fill="#000"/></svg><div class="addr-dots"><span></span><span></span><span></span></div></div>
+<div class="addr-info"><span class="pill pill-bk" style="align-self:flex-start;margin-bottom:4px">Pickup Address</span><div class="addr-name" id="pickup-name"></div><div class="addr-addr" id="pickup-addr"></div></div>
+<span class="addr-rm" onclick="removeAddr('pickup')">Remove</span>
+</div>
+</div>
+
+<div style="height:56px"></div>
+
+<!-- DELIVERY -->
+<div id="delivery-section">
+<div id="delivery-default" class="addr-search">
+<span class="pill pill-pb">Delivery Address</span>
+<div class="addr-input"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Start typing an address" id="delivery-search" oninput="onDeliverySearch(this.value)"></div>
+<div class="fav-list" id="delivery-autocomplete"></div>
+<div><button class="fav-btn" onclick="toggleFavs('delivery')">FAVOURITE ADDRESSES</button><div class="fav-list" id="delivery-favs"></div></div>
+</div>
+<div id="delivery-filled" style="display:none" class="addr-filled">
+<div class="addr-pin"><svg class="dot" viewBox="0 0 22 28"><ellipse cx="11" cy="10" rx="9" ry="9" fill="none" stroke="#6300FF" stroke-width="2"/><polygon points="7,16 11,26 15,16" fill="#6300FF"/></svg><div class="addr-dots"><span></span><span></span><span></span></div></div>
+<div class="addr-info"><span class="pill pill-pb" style="align-self:flex-start;margin-bottom:4px">Delivery Address</span><div class="addr-addr" id="delivery-addr"></div></div>
+<span class="addr-rm" onclick="removeAddr('delivery')">Remove</span>
+</div>
+</div>
+</div>
+
+<!-- PARCEL DETAILS -->
+<div class="wcard"><div class="h2" style="margin-bottom:8px">Parcel Details</div>
+<div class="dd" id="parcel-dd">
+<button class="dd-btn" onclick="toggleDD('parcel-dd')"><span id="parcel-label" style="color:#99a1af">Select parcel size</span><svg viewBox="0 0 16 10" fill="#666"><path d="M1 1l7 7 7-7"/></svg></button>
+<div class="dd-list" id="parcel-list"></div>
+</div></div>
+
+<!-- VEHICLE -->
+<div class="wcard"><div class="h2" style="margin-bottom:8px">Vehicle</div>
+<div class="dd" id="vehicle-dd">
+<button class="dd-btn" onclick="toggleDD('vehicle-dd')"><span id="vehicle-label" style="color:#99a1af">Select vehicle type</span><svg viewBox="0 0 16 10" fill="#666"><path d="M1 1l7 7 7-7"/></svg></button>
+<div class="dd-list" id="vehicle-list"></div>
+</div></div>
+
+<!-- SELECT SERVICE -->
+<div class="wcard"><div class="h2" style="margin-bottom:16px">Select service</div>
+<div class="svc-grid" id="svc-grid"></div>
+</div>
+</div>
+
+<!-- QUOTE PANEL -->
+<div class="qp" id="quote-panel">
+<div class="qp-title">Your quote</div>
+<div class="qp-addr" id="qp-addrs">
+<div class="qp-addr-item"><div class="qp-dot"><span class="qp-circle" style="background:#000;border:2px solid #000"></span><span class="cap">Pick up</span></div><div class="qp-val" id="qp-pickup">Add pick up address</div></div>
+<div class="qp-addr-item"><div class="qp-dot"><span class="qp-circle" style="background:var(--pb);border:2px solid var(--pb)"></span><span class="cap">Delivery</span></div><div class="qp-val" id="qp-delivery">Add delivery address</div></div>
+</div>
+<div class="qp-row"><span class="qp-l">Vehicle type</span><span class="qp-r" id="qp-vehicle">Add vehicle type</span></div>
+<div class="qp-row"><span class="qp-l">Items</span><span class="qp-r" id="qp-items">Add parcel details</span></div>
+<div class="qp-row"><span class="qp-l">Deliver before</span><span class="qp-r" id="qp-service">Add service</span></div>
+<div class="qp-price" id="qp-price" style="display:none">
+<div class="qp-price-row"><span>Price Ex VAT</span><span class="val" id="qp-exvat"></span></div>
+<div class="qp-price-row big"><span>Price inc VAT</span><span class="val" id="qp-incvat"></span></div>
+</div>
+<button class="bt bt-d" style="flex:none;width:100%" id="qp-continue" onclick="goTo(2)">CONTINUE</button>
+</div>
+</div>
+</div>
+
+<!-- ========== STEP 2: RECIPIENT INFO ========== -->
+<div class="screen" id="s2">
+<div class="one-col">
+<div class="h1" style="width:100%">Add recipient information</div>
+<div class="del-bar">
+<div class="del-pin"><svg class="dot" viewBox="0 0 24 32"><ellipse cx="12" cy="11" rx="9" ry="9" fill="none" stroke="#6300FF" stroke-width="2.5"/><polygon points="8,17 12,28 16,17" fill="#6300FF"/></svg><div class="addr-dots" style="margin-top:2px"><span></span><span></span><span></span></div></div>
+<div class="del-content"><span class="pill pill-pb">Delivery Address</span><div class="addr-addr" id="s2-del-addr" style="margin-top:4px"></div></div>
+</div>
+<div class="gcard">
+<div class="h2" style="margin-bottom:20px">Recipient  Information</div>
+<div style="display:flex;flex-direction:column;gap:20px">
+<div class="fg"><label class="lbl">Full name</label><input class="fi" type="text" id="r-name"></div>
+<div class="fg-row"><div class="fg"><label class="lbl">Building name/house/flat number</label><input class="fi" type="text" placeholder="e.g., Flat 4B" id="r-building"></div><div class="fg"><label class="lbl">Business name (optional)</label><input class="fi" type="text" id="r-business"></div></div>
+<div class="fg-row"><div class="fg"><label class="lbl">Contact number</label><input class="fi" type="text" placeholder="e.g., 07123 456789" id="r-phone"></div><div class="fg"><label class="lbl">Email for tracking link (optional)</label><input class="fi" type="text" placeholder="email@example.com" id="r-email"></div></div>
+<div class="fg"><label class="lbl">Instructions at pickup (optional)</label><textarea class="ta" placeholder="Any special instructions for the courier at pickup" id="r-instructions"></textarea></div>
+</div>
+</div>
+<div style="align-self:flex-end"><button class="add-btn">+ ADD MORE DETAILS</button></div>
+<div style="width:100%;display:flex;flex-direction:column;gap:16px;align-items:flex-end">
+<div style="width:100%"><div class="lbl" style="font-size:18px;line-height:24px;margin-bottom:4px">Save this address to your favourites?</div><div style="font-size:16px;color:#0a0a0a;line-height:24px">Speed up your next booking by saving your addresses. No manual input required.</div></div>
+<div class="cb-row" style="width:100%"><div class="cb" onclick="this.classList.toggle('checked')"></div>Save this address to my favourites</div>
+</div>
+<div class="br"><button class="bt bt-o" onclick="goTo(1)">BACK</button><button class="bt bt-p" onclick="goTo(3)">VIEW BOOKING SUMMARY</button></div>
+</div>
+</div>
+
+<!-- ========== STEP 3: BOOKING SUMMARY ========== -->
+<div class="screen" id="s3">
+<div class="one-col">
+<div class="h1" style="width:100%">Booking summary</div>
+<div class="map-ph"><svg class="mp" style="top:30%;left:38%" viewBox="0 0 20 26"><ellipse cx="10" cy="9" rx="8" ry="8" fill="#000" stroke="#000" stroke-width="1.5"/><polygon points="6,14 10,24 14,14" fill="#000"/></svg><svg class="mp" style="top:35%;left:62%" viewBox="0 0 20 26"><ellipse cx="10" cy="9" rx="8" ry="8" fill="none" stroke="#6300FF" stroke-width="2"/><polygon points="6,14 10,24 14,14" fill="#6300FF"/></svg></div>
+<div class="info-bar"><div class="ib-l"><div class="ib-t" id="s3-svc-title">Delivery before 12:00 <span>Fastest</span></div><div class="ib-d" id="s3-svc-detail">Today, 01 Feb · Pick up after <b>07:00</b> · Vehicle <b id="s3-vehicle-name">Motorbike</b></div></div><span class="edit-btn">EDIT</span></div>
+<div style="width:100%"><div class="sec-hd"><div class="lbl" style="font-size:18px">Delivery details</div><span class="edit-btn">EDIT</span></div>
+<div id="s3-addrs" style="display:flex;flex-direction:column;gap:20px"></div></div>
+<div style="width:100%"><div class="lbl" style="font-size:18px;margin-bottom:12px">Parcel details</div>
+<div class="parcel-bar"><span class="pb-t" id="s3-parcel"><b>1x Medium Item</b> 30x25x15cm, up to 6kg</span><span class="edit-btn">EDIT</span></div>
+<button class="add-btn" style="margin-top:16px">+ ADD ANOTHER PARCEL</button></div>
+<div class="fg" style="width:100%"><label class="lbl">Job reference</label><input class="fi" type="text" placeholder="ABC123" style="max-width:340px" id="s3-ref"></div>
+<div class="price-bar"><div><div class="pbl">Price (inc VAT)</div><div class="pbv" id="s3-incvat">£49.99</div></div><div><div class="pbl">Price (Ex VAT)</div><div class="pbvb" id="s3-exvat">£44.99</div></div></div>
+<div class="br"><button class="bt bt-o" onclick="goTo(2)">BACK</button><button class="bt bt-p" onclick="goTo(4)">CONFIRM AND BOOK</button></div>
+</div>
+</div>
+
+<!-- ========== STEP 4: CONFIRMED ========== -->
+<div class="screen" id="s4">
+<div class="one-col">
+<div class="conf-hd"><div class="h1">Booking confirmed</div></div>
+<div style="display:flex;justify-content:space-between;align-items:center;width:100%"><div class="lbl" style="font-size:18px" id="s4-ref">Job reference 92138</div><span class="track-link">TRACKING LINK</span></div>
+<div class="info-bar"><div class="ib-l"><div class="ib-t" id="s4-svc-title">Delivery before 12:00 <span>Fastest</span></div><div class="ib-d" id="s4-svc-detail">Today, 01 Feb · Pick up after <b>07:00</b> · Vehicle <b id="s4-vehicle-name">Motorbike</b></div></div><span class="edit-btn">EDIT</span></div>
+<div class="map-ph"><svg class="mp" style="top:30%;left:38%" viewBox="0 0 20 26"><ellipse cx="10" cy="9" rx="8" ry="8" fill="#000" stroke="#000" stroke-width="1.5"/><polygon points="6,14 10,24 14,14" fill="#000"/></svg><svg class="mp" style="top:35%;left:62%" viewBox="0 0 20 26"><ellipse cx="10" cy="9" rx="8" ry="8" fill="none" stroke="#6300FF" stroke-width="2"/><polygon points="6,14 10,24 14,14" fill="#6300FF"/></svg></div>
+<div style="width:100%"><div class="sec-hd"><div class="lbl" style="font-size:18px">Delivery details</div><span class="edit-btn">EDIT</span></div>
+<div id="s4-addrs" style="display:flex;flex-direction:column;gap:20px"></div></div>
+<div class="dl-section">
+<div class="dl-card"><h3>Download your label</h3><p>Ensure you download your label and secure them to your parcel</p><button class="dl-btn">DOWNLOAD LABEL</button></div>
+<div class="dl-card"><h3>Don't have a printer?</h3><p>Write manually on every parcel:</p><div class="num-step"><span class="num">1</span><span class="ntx">The recipients name</span></div><div class="num-step"><span class="num">2</span><span class="ntx">The address</span></div><div class="num-step"><span class="num">3</span><span class="ntx">The job number</span></div></div>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;width:100%;gap:24px;margin-top:16px">
+<div style="flex:1"><div class="lbl" style="font-size:16px;line-height:24px;margin-bottom:4px">Don't need this booking anymore?</div><div style="font-size:14px;color:#0a0a0a;line-height:20px">If the booking is no longer required please cancel at your earliest convenience.</div></div>
+<button style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border:1px solid var(--g10);border-radius:4px;font-weight:500;font-size:14px;letter-spacing:1.25px;text-transform:uppercase;color:var(--pd);background:var(--w);white-space:nowrap;flex-shrink:0">✕ CANCEL</button>
+</div>
+<div class="br"><button class="bt bt-o">VIEW BOOKED JOBS</button><button class="bt bt-p" onclick="goTo(1)">BOOK ANOTHER JOB</button></div>
+</div>
+</div>
+
+</main>
+</div>
+
+<script>
+// ===== DATA =====
+const D={pickup:null,delivery:null,parcel:null,vehicle:null,service:null,recipient:{}};
+const FAVS_PICKUP=[
+{name:"John Smith",biz:"Health is wealth Pharmacy",addr:"Tottenham Hale Retail Park, Broad Lane, Tottenham, London",pc:"N17 8HW"},
+{name:"Sarah Chen",biz:"BluePrint Studios",addr:"14 Wharf Road, Islington, London",pc:"N1 7RW"},
+{name:"Marcus Johnson",biz:"Swift Logistics HQ",addr:"88 Commercial Street, Spitalfields, London",pc:"E1 6LZ"},
+{name:"Priya Patel",biz:"The Copper Kettle Café",addr:"215 High Street, Walthamstow, London",pc:"E17 7BH"},
+{name:"David O'Brien",biz:"Apex Print Works",addr:"Unit 7, Meridian Trading Estate, Charlton, London",pc:"SE7 7RY"}
+];
+const FAVS_DELIVERY=[
+{addr:"53 Norwood Road, South Norwood, London",pc:"SE25 4UX"},
+{addr:"12 Portland Road, South Norwood, London",pc:"SE25 4PF"},
+{addr:"87 Selhurst Road, South Norwood, London",pc:"SE25 5QA"},
+{addr:"144 Whitehorse Lane, South Norwood, London",pc:"SE25 6RJ"},
+{addr:"21 Oliver Grove, South Norwood, London",pc:"SE25 6EJ"},
+{addr:"6 Crowther Road, South Norwood, London",pc:"SE25 5QP"},
+{addr:"238 High Street, South Norwood, London",pc:"SE25 6RL"},
+{addr:"15 Coventry Road, South Norwood, London",pc:"SE25 5DD"},
+{addr:"304-322 Norwood Road, South Norwood, London",pc:"SE25 4UX"},
+{addr:"47 Albert Road, South Norwood, London",pc:"SE25 4JD"}
+];
+const PARCELS=[
+{id:"small",nm:"Small",desc:"25x20x7cm, up to 3kg"},
+{id:"medium",nm:"Medium",desc:"30x25x15cm, up to 6kg"},
+{id:"large",nm:"Large",desc:"50x50x40cm, up to 25kg"},
+{id:"xl",nm:"XL",desc:"120x75x60cm, up to 40kg"},
+{id:"custom",nm:"Custom",desc:"Enter your own dimensions"}
+];
+const VEHICLES=[
+{id:"bicycle",nm:"Bicycle",desc:"up to 10kg | 40 x 30 x 30 cm"},
+{id:"cargo",nm:"Cargo bike",desc:"up to 100kg | 100 x 100 x 100 cm"},
+{id:"motorcycle",nm:"Motorcycle",desc:"up to 15kg | 45 x 45 x 45 cm"},
+{id:"car",nm:"Car",desc:"up to 100kg | 90 x 60 x 60 cm"},
+{id:"smallvan",nm:"Small van",desc:"up to 350kg | 150 x 120 x 90 cm"},
+{id:"largevan",nm:"Large van",desc:"up to 900kg | 350 x 200 x 160 cm"}
+];
+const SERVICES=[
+{id:"economy",nm:"Economy",price:"£24.99",exvat:"£21.24",time:"6:00 PM"},
+{id:"fast",nm:"Fast",price:"£34.99",exvat:"£29.74",time:"3:00 PM"},
+{id:"fastest",nm:"Fastest",price:"£49.99",exvat:"£44.99",time:"12:00 PM"},
+{id:"direct",nm:"Direct",price:"£64.99",exvat:"£55.24",time:"11:00 AM"},
+{id:"custom",nm:"Custom",price:null,time:null}
+];
+
+// ===== INIT =====
+function init(){
+  buildFavs('pickup',FAVS_PICKUP);
+  buildDeliveryFavs();
+  buildDeliveryAutocomplete();
+  buildParcelDD();
+  buildVehicleDD();
+  buildServiceCards();
+}
+function buildDeliveryFavs(){
+  const el=document.getElementById('delivery-favs');
+  el.innerHTML=FAVS_PICKUP.map((f,i)=>`<div class="fav-item" onclick="selectDeliveryFav(${i})"><div class="fn">${f.name}${f.biz?' — '+f.biz:''}</div><div class="fa">${f.addr} <b>${f.pc}</b></div></div>`).join('');
+}
+function selectDeliveryFav(idx){
+  const f=FAVS_PICKUP[idx];
+  D.delivery={addr:f.addr,pc:f.pc};
+  document.getElementById('delivery-favs').classList.remove('show');
+  document.getElementById('delivery-default').style.display='none';
+  document.getElementById('delivery-filled').style.display='flex';
+  document.getElementById('delivery-addr').innerHTML=`${f.addr} <b>${f.pc}</b>`;
+  updateQuote();
+}
+function buildDeliveryAutocomplete(){
+  const el=document.getElementById('delivery-autocomplete');
+  el.innerHTML=FAVS_DELIVERY.map((f,i)=>`<div class="fav-item" onclick="selectDeliveryAddr(${i})"><div class="fa">${f.addr} <b>${f.pc}</b></div></div>`).join('');
+}
+function onDeliverySearch(val){
+  const el=document.getElementById('delivery-autocomplete');
+  const v=val.toLowerCase().replace(/\s/g,'');
+  if(v.length>=3&&'se25'.startsWith(v)||v.startsWith('se25')||v.startsWith('se2')){
+    el.classList.add('show');
+  }else{
+    el.classList.remove('show');
+  }
+}
+function selectDeliveryAddr(idx){
+  const f=FAVS_DELIVERY[idx];
+  D.delivery=f;
+  document.getElementById('delivery-autocomplete').classList.remove('show');
+  document.getElementById('delivery-default').style.display='none';
+  document.getElementById('delivery-filled').style.display='flex';
+  document.getElementById('delivery-addr').innerHTML=`${f.addr} <b>${f.pc}</b>`;
+  updateQuote();
+}
+function buildFavs(type,list){
+  const el=document.getElementById(type+'-favs');
+  el.innerHTML=list.map((f,i)=>`<div class="fav-item" onclick="selectFav('${type}',${i})"><div class="fn">${f.name}${f.biz?' — '+f.biz:''}</div><div class="fa">${f.addr} <b>${f.pc}</b></div></div>`).join('');
+}
+function buildParcelDD(){
+  const el=document.getElementById('parcel-list');
+  el.innerHTML=PARCELS.map(p=>`<div class="dd-item" onclick="selectParcel('${p.id}')"><div class="tx"><div class="nm">${p.nm}</div><div class="dt">${p.desc}</div></div></div>`).join('');
+}
+function buildVehicleDD(){
+  const el=document.getElementById('vehicle-list');
+  el.innerHTML=VEHICLES.map(v=>`<div class="dd-item" onclick="selectVehicle('${v.id}')"><div class="tx"><div class="nm">${v.nm}</div><div class="dt">${v.desc}</div></div></div>`).join('');
+}
+function buildServiceCards(){
+  const el=document.getElementById('svc-grid');
+  el.innerHTML=SERVICES.map(s=>{
+    if(s.id==='custom') return `<button class="svc-card custom-card" onclick="selectService('${s.id}')" data-svc="${s.id}"><div class="svc-top"><span class="svc-nm">${s.nm}</span><span class="svc-desc">You choose your delivery window</span></div></button>`;
+    return `<button class="svc-card" onclick="selectService('${s.id}')" data-svc="${s.id}"><div class="svc-top"><span class="svc-nm">${s.nm}</span><span class="svc-pr">${s.price}</span></div><div class="svc-lb">Deliver before</div><div class="svc-tm">${s.time}</div></button>`;
+  }).join('');
+}
+
+// ===== FAVOURITES =====
+function toggleFavs(type){
+  const el=document.getElementById(type+'-favs');
+  el.classList.toggle('show');
+  // Close the other dropdown if open
+  if(type==='delivery'){document.getElementById('delivery-autocomplete').classList.remove('show')}
+}
+function selectFav(type,idx){
+  const f=FAVS_PICKUP[idx];
+  D.pickup=f;
+  document.getElementById('pickup-favs').classList.remove('show');
+  document.getElementById('pickup-default').style.display='none';
+  document.getElementById('pickup-filled').style.display='flex';
+  document.getElementById('pickup-name').innerHTML=`<b>${f.name}</b>${f.biz?' '+f.biz:''}`;
+  document.getElementById('pickup-addr').innerHTML=`${f.addr} <b>${f.pc}</b>`;
+  updateQuote();
+}
+function removeAddr(type){
+  D[type]=null;
+  document.getElementById(type+'-filled').style.display='none';
+  document.getElementById(type+'-default').style.display='flex';
+  updateQuote();
+}
+
+// ===== DROPDOWNS =====
+function toggleDD(id){
+  const dd=document.getElementById(id);
+  const btn=dd.querySelector('.dd-btn');
+  const list=dd.querySelector('.dd-list');
+  btn.classList.toggle('open');
+  list.classList.toggle('show');
+}
+function closeDD(id){
+  const dd=document.getElementById(id);
+  dd.querySelector('.dd-btn').classList.remove('open');
+  dd.querySelector('.dd-list').classList.remove('show');
+}
+function selectParcel(id){
+  const p=PARCELS.find(x=>x.id===id);
+  D.parcel=p;
+  document.getElementById('parcel-label').innerHTML=`<b>${p.nm}</b> <span style="color:var(--g75);font-weight:400">${p.desc}</span>`;
+  document.getElementById('parcel-label').style.color='#0a0a0a';
+  document.querySelectorAll('#parcel-list .dd-item').forEach(el=>el.classList.remove('sel'));
+  event.currentTarget.classList.add('sel');
+  closeDD('parcel-dd');
+  updateQuote();
+}
+function selectVehicle(id){
+  const v=VEHICLES.find(x=>x.id===id);
+  D.vehicle=v;
+  document.getElementById('vehicle-label').innerHTML=`<b>${v.nm}</b> <span style="color:var(--g75);font-weight:400">${v.desc}</span>`;
+  document.getElementById('vehicle-label').style.color='#0a0a0a';
+  document.querySelectorAll('#vehicle-list .dd-item').forEach(el=>el.classList.remove('sel'));
+  event.currentTarget.classList.add('sel');
+  closeDD('vehicle-dd');
+  updateQuote();
+}
+function selectService(id){
+  const s=SERVICES.find(x=>x.id===id);
+  D.service=s;
+  document.querySelectorAll('.svc-card').forEach(el=>el.classList.remove('sel'));
+  document.querySelector(`[data-svc="${id}"]`).classList.add('sel');
+  updateQuote();
+}
+
+// ===== QUOTE PANEL =====
+function updateQuote(){
+  const qpP=document.getElementById('qp-pickup');
+  const qpD=document.getElementById('qp-delivery');
+  const qpV=document.getElementById('qp-vehicle');
+  const qpI=document.getElementById('qp-items');
+  const qpS=document.getElementById('qp-service');
+  const qpPr=document.getElementById('qp-price');
+  const btn=document.getElementById('qp-continue');
+
+  qpP.textContent=D.pickup?`${D.pickup.addr} ${D.pickup.pc}`:'Add pick up address';
+  qpD.textContent=D.delivery?`${D.delivery.addr} ${D.delivery.pc}`:'Add delivery address';
+  qpV.innerHTML=D.vehicle?`<b>${D.vehicle.nm}</b>`:'Add vehicle type';
+  if(D.parcel){qpI.innerHTML=`<b>1x ${D.parcel.nm}</b><br><span style="font-size:13px">${D.parcel.desc}</span>`}else{qpI.textContent='Add parcel details'}
+  if(D.service&&D.service.time){qpS.innerHTML=`<b>${D.service.time}</b><br><span style="font-size:13px">${D.service.nm}</span>`}else if(D.service){qpS.innerHTML=`<b>Custom</b>`}else{qpS.textContent='Add service'}
+
+  const ready=D.pickup&&D.delivery&&D.parcel&&D.vehicle&&D.service;
+  if(ready&&D.service.price){
+    qpPr.style.display='flex';
+    document.getElementById('qp-exvat').textContent=D.service.exvat;
+    document.getElementById('qp-incvat').textContent=D.service.price;
+    btn.className='bt bt-p';btn.style.flex='none';btn.style.width='100%';btn.style.pointerEvents='auto';btn.style.opacity='1';
+  }else if(ready){
+    qpPr.style.display='none';
+    btn.className='bt bt-p';btn.style.flex='none';btn.style.width='100%';btn.style.pointerEvents='auto';btn.style.opacity='1';
+  }else{
+    qpPr.style.display='none';
+    btn.className='bt bt-d';btn.style.flex='none';btn.style.width='100%';
+  }
+}
+
+// ===== NAVIGATION =====
+function goTo(step){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s'+step).classList.add('active');
+  window.scrollTo(0,0);
+  if(step===2) populateStep2();
+  if(step===3) populateStep3();
+  if(step===4) populateStep4();
+}
+function populateStep2(){
+  if(D.delivery){
+    document.getElementById('s2-del-addr').innerHTML=`${D.delivery.addr} <b>${D.delivery.pc}</b>`;
+  }
+}
+function populateStep3(){
+  // Service bar
+  if(D.service&&D.service.time){
+    document.getElementById('s3-svc-title').innerHTML=`Delivery before ${D.service.time} <span>${D.service.nm}</span>`;
+  }
+  if(D.vehicle){document.getElementById('s3-vehicle-name').textContent=D.vehicle.nm}
+  // Addresses
+  const c=document.getElementById('s3-addrs');
+  c.innerHTML='';
+  if(D.pickup) c.innerHTML+=addrBlock('pickup',D.pickup);
+  if(D.delivery) c.innerHTML+=addrBlock('delivery',D.delivery);
+  // Parcel
+  if(D.parcel){
+    document.getElementById('s3-parcel').innerHTML=`<b>1x ${D.parcel.nm} Item</b> ${D.parcel.desc}`;
+  }
+  // Price
+  if(D.service&&D.service.price){
+    document.getElementById('s3-incvat').textContent=D.service.price;
+    document.getElementById('s3-exvat').textContent=D.service.exvat;
+  }
+}
+function populateStep4(){
+  const ref=document.getElementById('s3-ref').value||'92138';
+  document.getElementById('s4-ref').textContent='Job reference '+ref;
+  if(D.service&&D.service.time){
+    document.getElementById('s4-svc-title').innerHTML=`Delivery before ${D.service.time} <span>${D.service.nm}</span>`;
+  }
+  if(D.vehicle){document.getElementById('s4-vehicle-name').textContent=D.vehicle.nm}
+  const c=document.getElementById('s4-addrs');
+  c.innerHTML='';
+  if(D.pickup) c.innerHTML+=addrBlock('pickup',D.pickup);
+  if(D.delivery) c.innerHTML+=addrBlock('delivery',D.delivery);
+}
+function addrBlock(type,f){
+  const isPu=type==='pickup';
+  const pinFill=isPu?'fill="#000" stroke="#000"':'fill="none" stroke="#6300FF"';
+  const triFill=isPu?'fill="#000"':'fill="#6300FF"';
+  const pillCls=isPu?'pill-bk':'pill-pb';
+  const label=isPu?'Pickup Address':'Delivery Address';
+  let nameHtml='';
+  if(isPu){nameHtml=`<div class="addr-name"><b>${f.name}</b>${f.biz?' '+f.biz:''}</div>`}
+  else{const rn=document.getElementById('r-name')?document.getElementById('r-name').value:'';if(rn)nameHtml=`<div class="addr-name"><b>${rn}</b></div>`}
+  return `<div class="addr-filled" style="border:none">
+    <div class="addr-pin"><svg class="dot" viewBox="0 0 22 28"><ellipse cx="11" cy="10" rx="9" ry="9" ${pinFill} stroke-width="2"/><polygon points="7,16 11,26 15,16" ${triFill}/></svg><div class="addr-dots"><span></span><span></span><span></span><span></span></div></div>
+    <div class="addr-info"><span class="pill ${pillCls}" style="align-self:flex-start;margin-bottom:4px">${label}</span>${nameHtml}<div class="addr-addr">${f.addr} <b>${f.pc}</b></div></div></div>`;
+}
+
+// Close dropdowns on outside click
+document.addEventListener('click',e=>{
+  ['parcel-dd','vehicle-dd'].forEach(id=>{
+    const dd=document.getElementById(id);
+    if(dd&&!dd.contains(e.target))closeDD(id);
+  });
+  ['pickup-favs','delivery-autocomplete','delivery-favs'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&!el.contains(e.target)&&!e.target.classList.contains('fav-btn')&&e.target.id!=='delivery-search')el.classList.remove('show');
+  });
+});
+
+init();
+</script>
+</body>
+</html>

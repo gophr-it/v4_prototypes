@@ -328,7 +328,7 @@ input,textarea,select{font-family:inherit;outline:none}
 </div>
 <div id="delivery-filled" style="display:none" class="addr-filled">
 <div class="addr-pin"><svg class="dot" viewBox="0 0 22 28"><ellipse cx="11" cy="10" rx="9" ry="9" fill="none" stroke="#6300FF" stroke-width="2"/><polygon points="7,16 11,26 15,16" fill="#6300FF"/></svg><div class="addr-dots"><span></span><span></span><span></span></div></div>
-<div class="addr-info"><span class="pill pill-pb" style="align-self:flex-start;margin-bottom:4px">Delivery Address</span><div class="addr-addr" id="delivery-addr"></div></div>
+<div class="addr-info"><span class="pill pill-pb" style="align-self:flex-start;margin-bottom:4px">Delivery Address</span><div class="addr-name" id="delivery-name"></div><div class="addr-addr" id="delivery-addr"></div></div>
 <span class="addr-rm" onclick="removeAddr('delivery')">Remove</span>
 </div>
 </div>
@@ -582,6 +582,7 @@ function useManualAddr(type){
     D.delivery={addr:addrStr,pc:pc};
     document.getElementById('delivery-default').style.display='none';
     document.getElementById('delivery-filled').style.display='flex';
+    document.getElementById('delivery-name').innerHTML='';
     document.getElementById('delivery-addr').innerHTML=`${addrStr} <b>${pc}</b>`;
   }
   updateQuote();
@@ -624,8 +625,8 @@ function buildFavs(type,list){document.getElementById(type+'-favs').innerHTML=li
 function buildDeliveryFavs(){document.getElementById('delivery-favs').innerHTML=FAVS_PICKUP.map((f,i)=>`<div class="fav-item" onclick="selectDeliveryFav(${i})"><div class="fn">${f.name}${f.biz?' – '+f.biz:''}</div><div class="fa">${f.addr} <b>${f.pc}</b></div></div>`).join('')}
 function buildDeliveryAutocomplete(){document.getElementById('delivery-autocomplete').innerHTML=FAVS_DELIVERY.map((f,i)=>`<div class="fav-item" onclick="selectDeliveryAddr(${i})"><div class="fa">${f.addr} <b>${f.pc}</b></div></div>`).join('')}
 function onDeliverySearch(val){const el=document.getElementById('delivery-autocomplete');const v=val.toLowerCase().replace(/\s/g,'');if(v.length>=3&&'se25'.startsWith(v)||v.startsWith('se25')||v.startsWith('se2')){el.classList.add('show')}else{el.classList.remove('show')}}
-function selectDeliveryAddr(idx){const f=FAVS_DELIVERY[idx];D.delivery=f;document.getElementById('delivery-autocomplete').classList.remove('show');document.getElementById('delivery-default').style.display='none';document.getElementById('delivery-filled').style.display='flex';document.getElementById('delivery-addr').innerHTML=`${f.addr} <b>${f.pc}</b>`;updateQuote()}
-function selectDeliveryFav(idx){const f=FAVS_PICKUP[idx];D.delivery={addr:f.addr,pc:f.pc};document.getElementById('delivery-favs').classList.remove('show');document.getElementById('delivery-default').style.display='none';document.getElementById('delivery-filled').style.display='flex';document.getElementById('delivery-addr').innerHTML=`${f.addr} <b>${f.pc}</b>`;updateQuote()}
+function selectDeliveryAddr(idx){const f=FAVS_DELIVERY[idx];D.delivery=f;document.getElementById('delivery-autocomplete').classList.remove('show');document.getElementById('delivery-default').style.display='none';document.getElementById('delivery-filled').style.display='flex';document.getElementById('delivery-name').innerHTML='';document.getElementById('delivery-addr').innerHTML=`${f.addr} <b>${f.pc}</b>`;updateQuote()}
+function selectDeliveryFav(idx){const f=FAVS_PICKUP[idx];D.delivery={name:f.name,biz:f.biz||'',addr:f.addr,pc:f.pc};document.getElementById('delivery-favs').classList.remove('show');document.getElementById('delivery-default').style.display='none';document.getElementById('delivery-filled').style.display='flex';document.getElementById('delivery-name').innerHTML=`<b>${f.name}</b>${f.biz?' '+f.biz:''}`;document.getElementById('delivery-addr').innerHTML=`${f.addr} <b>${f.pc}</b>`;updateQuote()}
 function toggleFavs(type){const el=document.getElementById(type+'-favs');el.classList.toggle('show');if(type==='delivery')document.getElementById('delivery-autocomplete').classList.remove('show')}
 function selectFav(type,idx){const f=FAVS_PICKUP[idx];D.pickup=f;document.getElementById('pickup-favs').classList.remove('show');document.getElementById('pickup-default').style.display='none';document.getElementById('pickup-filled').style.display='flex';document.getElementById('pickup-name').innerHTML=`<b>${f.name}</b>${f.biz?' '+f.biz:''}`;document.getElementById('pickup-addr').innerHTML=`${f.addr} <b>${f.pc}</b>`;updateQuote()}
 function removeAddr(type){D[type]=null;document.getElementById(type+'-filled').style.display='none';document.getElementById(type+'-default').style.display='flex';const form=document.getElementById(type+'-manual');if(form){form.classList.remove('show');form.querySelectorAll('input,textarea').forEach(el=>el.value='')}if(type==='delivery')document.getElementById('delivery-search').value='';updateQuote()}
@@ -633,8 +634,33 @@ function removeAddr(type){D[type]=null;document.getElementById(type+'-filled').s
 // DROPDOWNS
 function toggleDD(id){const dd=document.getElementById(id);dd.querySelector('.dd-btn').classList.toggle('open');dd.querySelector('.dd-list').classList.toggle('show')}
 function closeDD(id){const dd=document.getElementById(id);if(!dd)return;dd.querySelector('.dd-btn').classList.remove('open');dd.querySelector('.dd-list').classList.remove('show')}
-function selectVehicle(id){const v=VEHICLES.find(x=>x.id===id);D.vehicle=v;document.getElementById('vehicle-label').innerHTML=`<b>${v.nm}</b> <span style="color:var(--g75);font-weight:400">${v.desc}</span>`;document.getElementById('vehicle-label').style.color='#0a0a0a';document.querySelectorAll('#vehicle-list .dd-item').forEach(el=>el.classList.remove('sel'));event.currentTarget.classList.add('sel');closeDD('vehicle-dd');updateQuote()}
-function buildVehicleDD(){document.getElementById('vehicle-list').innerHTML=VEHICLES.map(v=>`<div class="dd-item" onclick="selectVehicle('${v.id}')"><div class="tx"><div class="nm">${v.nm}</div><div class="dt">${v.desc}</div></div></div>`).join('')}
+const PARCEL_VEHICLE_MAP={small:'bicycle',medium:'bicycle',large:'car',xl:'smallvan'};
+let recommendedVehicle=null;
+function getRecommendedVehicle(){
+  const sizes=['small','medium','large','xl'];
+  let highest=-1;
+  D.parcels.forEach(p=>{if(p.size){const idx=sizes.indexOf(p.size.id);if(idx>highest)highest=idx}});
+  if(highest<0)return null;
+  return PARCEL_VEHICLE_MAP[sizes[highest]]||null;
+}
+function autoRecommendVehicle(){
+  const rec=getRecommendedVehicle();
+  recommendedVehicle=rec;
+  if(rec){
+    const v=VEHICLES.find(x=>x.id===rec);
+    D.vehicle=v;
+    document.getElementById('vehicle-label').innerHTML=`<b>${v.nm}</b> <span style="color:var(--g75);font-weight:400">${v.desc}</span>`;
+    document.getElementById('vehicle-label').style.color='#0a0a0a';
+  }
+  buildVehicleDD();
+  updateQuote();
+}
+function selectVehicle(id){const v=VEHICLES.find(x=>x.id===id);D.vehicle=v;document.getElementById('vehicle-label').innerHTML=`<b>${v.nm}</b> <span style="color:var(--g75);font-weight:400">${v.desc}</span>`;document.getElementById('vehicle-label').style.color='#0a0a0a';closeDD('vehicle-dd');updateQuote()}
+function buildVehicleDD(){document.getElementById('vehicle-list').innerHTML=VEHICLES.map(v=>{
+  const isSel=D.vehicle&&D.vehicle.id===v.id;
+  const isRec=recommendedVehicle===v.id;
+  return `<div class="dd-item${isSel?' sel':''}" onclick="selectVehicle('${v.id}')"><div class="tx"><div class="nm">${v.nm}${isRec?' <span style="display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;background:var(--pl);color:var(--pb);font-size:11px;font-weight:700;letter-spacing:.5px;margin-left:8px;vertical-align:middle">RECOMMENDED</span>':''}</div><div class="dt">${v.desc}</div></div></div>`;
+}).join('')}
 
 // SERVICES
 const checkSvg='<svg class="svc-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#6300FF"/><polyline points="7,12 10.5,15.5 17,9" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
